@@ -1,5 +1,5 @@
 {
-  "name": "osm-webgl-demos",
+  "name": "ghostmap",
   "dependencies": {
     "tangram": "git://github.com/tangrams/tangram.git#alpha-dev"
   }
