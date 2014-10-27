@@ -27,9 +27,9 @@ modes:
                 EFFECT_NOISE_ANIMATED: true
             transforms:
                 globals:
-                    url: demos/shaders/glsl-noise-periodic-3d.glsl
+                    url: node_modules/tangram/demos/shaders/glsl-noise-periodic-3d.glsl
                 fragment:
-                    url: demos/shaders/noise.glsl
+                    url: node_modules/tangram/demos/shaders/noise.glsl
 
 
     ghostbuildings:
@@ -78,7 +78,7 @@ modes:
         shaders:
             transforms:
                 # fragment: color += vec3(gl_FragCoord.x / u_resolution.x, 0.0, gl_FragCoord.y / u_resolution.y);
-                fragment: { url: demos/shaders/color_bleed.glsl }
+                # fragment: { url: demos/shaders/color_bleed.glsl }
 
     # polygons:
     #     texcoords: true
@@ -98,7 +98,7 @@ modes:
         texcoords: true
         shaders:
             uniforms:
-                u_texture: demos/images/ghost_strip.gif
+                u_texture: images/ghost_strip.gif
                 u_frequency: 100.
             transforms:
                 globals: |
