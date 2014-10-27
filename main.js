@@ -138,20 +138,6 @@
     window.addEventListener('resize', resizeMap);
     resizeMap();
 
-
-    // Take a screenshot and save file
-    function screenshot() {
-        // Adapted from: https://gist.github.com/unconed/4370822
-        var image = scene.canvas.toDataURL('image/png').slice(22); // slice strips host/mimetype/etc.
-        var data = atob(image); // convert base64 to binary without UTF-8 mangling
-        var buf = new Uint8Array(data.length);
-        for (var i = 0; i < data.length; ++i) {
-            buf[i] = data.charCodeAt(i);
-        }
-        var blob = new Blob([buf], { type: 'image/png' });
-        saveAs(blob, 'tangram-' + (+new Date()) + '.png'); // uses FileSaver.js: https://github.com/eligrey/FileSaver.js/
-    }
-
     // Render/GL stats: http://spite.github.io/rstats/
     // Activate with 'rstats' anywhere in options list in URL
     if (url_ui && url_ui.indexOf('rstats') >= 0) {
@@ -184,18 +170,7 @@
     var gl_mode_options = {
         effect: url_mode || '',
         options: {
-            'None': '',
-            'Elevator': 'elevator',
-            'Breathe': 'breathe',
-            'Pop-up': 'popup',
-            'Dots': 'dots',
-            'Wood': 'wood',
-            'B&W Halftone': 'halftone',
-            'Color Halftone': 'colorhalftone',
-            'Windows': 'windows',
-            'Environment Map': 'envmap',
-            'Color Bleed': 'colorbleed',
-            'Rainbow': 'rainbow'
+            'None': ''
         },
         setup: function (mode) {
             // Restore initial state
@@ -206,10 +181,6 @@
                     layer_styles[l].visible = this.initial.layers[l].visible;
                 }
             };
-            gui.camera = scene.styles.camera.type = this.initial.camera || scene.styles.camera.type;
-
-            // Remove existing mode-specific controls
-            gui.removeFolder(this.folder);
 
             // Mode-specific settings
             if (mode != '') {
@@ -224,32 +195,6 @@
                     }
                 }
                 this.initial.camera = this.initial.camera || scene.styles.camera.type;
-
-                // Remove existing mode-specific controls
-                gui.removeFolder(this.folder);
-
-                if (this.settings[mode] != null) {
-                    var settings = this.settings[mode] || {};
-
-                    // Change projection if specified
-                    gui.camera = scene.styles.camera.type = settings.camera || this.initial.camera;
-
-                    // Mode-specific setup function
-                    if (settings.setup) {
-                        settings.uniforms = (scene.modes[mode].shaders && scene.modes[mode].shaders.uniforms);
-                        settings.state = {}; // dat.gui needs a single object to old state
-
-                        this.folder = mode[0].toUpperCase() + mode.slice(1); // capitalize first letter
-                        settings.folder = gui.addFolder(this.folder);
-                        settings.folder.open();
-
-                        settings.setup(mode);
-
-                        if (settings.folder.__controllers.length == 0) {
-                            gui.removeFolder(this.folder);
-                        }
-                    }
-                }
             }
 
             // Recompile/rebuild
@@ -258,108 +203,8 @@
             scene.refreshModes();
             scene.rebuild();
             updateURL();
-
-            // Force-update dat.gui
-            for (var i in gui.__controllers) {
-                gui.__controllers[i].updateDisplay();
-            }
-        },
-        settings: {
-        },
-        initial: { // initial state to restore to on mode switch
-            layers: {}
-        },
-        folder: null, // set to current (if any) DAT.gui folder name, cleared on mode switch
-        scaleColor: function (c, factor) { // convenience for converting between uniforms (0-1) and DAT colors (0-255)
-            if ((typeof c == 'string' || c instanceof String) && c[0].charAt(0) == "#") {
-                // convert from hex to rgb
-                var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(c);
-                c = result ? [
-                    parseInt(result[1], 16),
-                    parseInt(result[2], 16),
-                    parseInt(result[3], 16)
-                ] : null;
-            }
-            return [c[0] * factor, c[1] * factor, c[2] * factor];
         }
     };
-
-    // Create dat GUI
-    var gui = new dat.GUI({ autoPlace: true });
-    function addGUI () {
-        gui.domElement.parentNode.style.zIndex = 5;
-        window.gui = gui;
-
-        // Add ability to remove a whole folder from DAT.gui
-        gui.removeFolder = function(name) {
-            var folder = this.__folders[name];
-            if (folder == null) {
-                return;
-            }
-
-            folder.close();
-            folder.__ul.parentNode.removeChild(folder.__ul);
-            this.__folders[name] = undefined;
-            this.onResize();
-        };
-
-        // Camera
-        var camera_types = {
-            'Flat': 'flat',
-            'Perspective': 'perspective',
-            'Isometric': 'isometric'
-        };
-        gui.camera = layer.scene.styles.camera.type;
-        gui.add(gui, 'camera', camera_types).onChange(function(value) {
-            layer.scene.styles.camera.type = value;
-            layer.scene.refreshCamera();
-        });
-
-        // Lighting
-        var lighting_types = {
-            'None': null,
-            'Diffuse': 'diffuse',
-            'Specular': 'specular',
-            'Flat': 'flat',
-            'Night': 'night'
-        };
-        gui.lighting = layer.scene.styles.lighting.type;
-        gui.add(gui, 'lighting', lighting_types).onChange(function(value) {
-            layer.scene.styles.lighting.type = value;
-            layer.scene.refreshLighting();
-        });
-
-        // Feature selection on hover
-        gui['feature info'] = true;
-        gui.add(gui, 'feature info');
-
-        // Screenshot
-        gui.screenshot = function () {
-            gui.queue_screenshot = true;
-        };
-        gui.add(gui, 'screenshot');
-
-        // Layers
-        var layer_gui = gui.addFolder('Layers');
-        var layer_controls = {};
-        layer.scene.layers.forEach(function(l) {
-            if (layer.scene.styles.layers[l.name] == null) {
-                return;
-            }
-
-            layer_controls[l.name] = !(layer.scene.styles.layers[l.name].visible == false);
-            layer_gui.
-                add(layer_controls, l.name).
-                onChange(function(value) {
-                    layer.scene.styles.layers[l.name].visible = value;
-                    layer.scene.rebuild();
-                });
-        });
-
-        // Modes
-        gui.add(gl_mode_options, 'effect', gl_mode_options.options).
-            onChange(gl_mode_options.setup.bind(gl_mode_options));
-    }
 
     // Feature selection
     function initFeatureSelection () {
@@ -370,13 +215,13 @@
 
         // Show selected feature on hover
         scene.container.addEventListener('mousemove', function (event) {
-            if (gui['feature info'] == false) {
-                if (selection_info.parentNode != null) {
-                    selection_info.parentNode.removeChild(selection_info);
-                }
+            // if (gui['feature info'] == false) {
+            //     if (selection_info.parentNode != null) {
+            //         selection_info.parentNode.removeChild(selection_info);
+            //     }
 
-                return;
-            }
+            //     return;
+            // }
 
             var pixel = { x: event.clientX, y: event.clientY };
 
@@ -446,20 +291,12 @@
             rS('features').set(scene.getDebugSum('features'));
             rS().update();
         }
-
-        // Screenshot needs to happen in the requestAnimationFrame callback, or the frame buffer might already be cleared
-        if (gui.queue_screenshot == true) {
-            gui.queue_screenshot = false;
-            screenshot();
-        }
     }
 
     /***** Render loop *****/
     window.addEventListener('load', function () {
         // Scene initialized
-        layer.on('init', function() {
-            addGUI();
-
+        layer.on('init', function() {            
             if (url_mode) {
                 gl_mode_options.setup(url_mode);
             } else {
