@@ -13,12 +13,6 @@ lighting:
     type: night
 
 modes:
-    # note: consider this syntax as a special case for global mode settings
-    # all:
-    #     shaders:
-    #         transforms:
-    #             fragment: { url: demos/shaders/spotlight.glsl }
-
     water:
         extends: polygons
         animated: true
@@ -78,19 +72,7 @@ modes:
         shaders:
             transforms:
                 # fragment: color += vec3(gl_FragCoord.x / u_resolution.x, 0.0, gl_FragCoord.y / u_resolution.y);
-                # fragment: { url: demos/shaders/color_bleed.glsl }
-
-    # polygons:
-    #     texcoords: true
-    #     shaders:
-    #         uniforms:
-    #             u_texture: demos/images/LitSphere_test_02.jpg
-    #         transforms:
-    #             fragment: |
-    #                 color = vec3(v_texcoord.xy, 0.);
-    #                 //color = vec3(v_texcoord.x, mod(v_texcoord.y + u_time/2., 1.), 0.);
-    #                 //color = texture2D(u_texture, v_texcoord).rgb;
-    #                 //color = texture2D(u_texture, vec2(v_texcoord.x, mod(v_texcoord.y + u_time/2., 1.))).rgb;
+                fragment: { url: node_modules/tangram/demos/shaders/color_bleed.glsl }
 
     ghosts:
         extends: polygons
@@ -151,7 +133,7 @@ layers:
     landuse:
         interactive: true
         color:
-            default: [0.5, 0.875, 0.5]
+            default: [0.5, 0.675, 0.5]
             pitch: [0.3, 0.675, 0.3]
         # outline:
         #     color:
@@ -237,7 +219,8 @@ layers:
             # default: function(f) { var h = feature.height || 20; h = Math.min((h + 50) / 250, 1.0); return [h, h, h]; } // shade based on height
             # default: Style.color.randomColor
             # default: Style.color.pseudoRandomColor
-            default: Style.color.pseudoRandomGrayscale
+            # default: Style.color.pseudoRandomGrayscale
+            default: [.5, .5, .5]
             # default: function (f) { if (feature.name || feature.kind) { return [(feature.name && 0.6) || 0.2, 0.2, (feature.kind && 0.6) || 0.2]; } else { return [0.6, 0.6, 0.6] }; }
             # default: |
             #     function (f) {
@@ -257,7 +240,7 @@ layers:
         extrude:
             default: function (f, t) { return ((zoom >= 15 && feature.height > 20) || zoom >= 16) }
 
-    spooky:
+    pois:
         mode:
             # name: points
             name: ghosts
@@ -269,3 +252,10 @@ layers:
         size:
             default: Style.pixels(20)
 
+    # places:
+    #     filter: function(f, t) { return (zoom >= 13); }
+    #     color: {
+    #         # default: [0.0, 1.0, 1.0]
+    #         default: function(f) { return feature.kind == 'administrative' ? [1, 0, 1] : [1, 1, 0]; }
+    #     size:
+    #         default: Style.pixels(5)
