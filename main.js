@@ -17,6 +17,7 @@
             source: {
                 type: 'GeoJSONTileSource',
                 url:  appendProtocol('//vector.mapzen.com/osm/all/{z}/{x}/{y}.json')
+                // url:  appendProtocol('//dev.vector.mapzen.com/osm/haunted/{z}/{x}/{y}.json')
             },
             layers: 'layers.yaml',
             styles: 'styles.yaml'
