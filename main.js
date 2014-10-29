@@ -103,6 +103,7 @@
 
     var map = L.map('map', {
         maxZoom: 20,
+        minZoom: 13,
         inertia: false,
         keyboard: false
     });

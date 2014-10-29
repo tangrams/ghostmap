@@ -67,7 +67,8 @@ modes:
 
                     float noiseColor = 2. * noise(vPos.xyz * 0.1 + (u_time / 5.));
 
-                    color.a = 1.- noiseColor;
+                    // vary maximum alpha by zoom
+                    color.a = 1. - ((16. - clamp(u_map_zoom, 13., 16.)) * .3) - noiseColor;
 
 
 layers:
@@ -146,4 +147,5 @@ layers:
         color:
             default: [1, 1, 0]
         size:
-            default: Style.pixels(20)
+            # vary size with zoom
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
