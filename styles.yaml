@@ -68,7 +68,7 @@ modes:
                     float noiseColor = 2. * noise(vPos.xyz * 0.1 + (u_time / 5.));
 
                     // vary maximum alpha by zoom
-                    //color.a = 1. - ((16. - clamp(u_map_zoom, 13., 16.)) * .3) - noiseColor;
+                    color.a = 1. - ((16. - clamp(u_map_zoom, 13., 16.)) * .3) - noiseColor;
 
 
 layers:
@@ -132,7 +132,6 @@ layers:
             name: ghostbuildings
         color:
             default: [.5, .5, .5]
-        # interactive: true
         outline:
             color:
                 default: [1, 1, 1]
@@ -147,52 +146,85 @@ layers:
         filter: |
             function (f) {
                 var types = ["cemetery"];
-                var blacklist = ["Memorial Museum", "Museum of the Jewish Heritage", "National Holocaust Museum"];
+                var blacklist = ["Holocaust"];
                 if (feature.name != null &&
                     feature.kind != null &&
-                    types.indexOf(feature.kind) > -1 &&
-                    blacklist.indexOf(feature.name) < 0
-                ){
+                    types.indexOf(feature.kind) > -1) {
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
                     return true;
-                } else { return false; }
+                }
+                return false;
             }
         interactive: true
         color:
             default: [.5, .5, .5]
         size:
-            default: Style.pixels(10)
+            # vary size with zoom
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
 
     ghostbuildings:
         mode:
             name: ghosts
         filter: |
             function (f) {
-                var types = ["church", "library", "museum", "place_of_worship"];
-                var blacklist = ["Memorial Museum", "Museum of the Jewish Heritage", "National Holocaust Museum"];
+                var types = ["church", "library", "museum", "place_of_worship","police"];
+                var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
                 if (feature.name != null &&
                     feature.kind != null &&
-                    types.indexOf(feature.kind) > -1 &&
-                    blacklist.indexOf(feature.name) < 0
-                ){
-                            return true;
-                } else { return false; }
+                    types.indexOf(feature.kind) > -1) {
+
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
             }
         interactive: true
         color:
             default: [.5, .5, .5]
         size:
-            default: Style.pixels(10)
+            # vary size with zoom
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
 
     pois:
         mode:
             name: ghosts
-        # filter: function (f) { return feature.name != null; }
-        filter: function (f) { return feature.name != null && feature.kind == "place_of_worship"; }
-        # filter: function (f) { return feature.name != null && feature.kind == "library"; }
+        filter: |
+            function (f) {
+                var types = ["church", "library", "museum", "place_of_worship","police"];
+                var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
+                if (feature.name != null &&
+                    feature.kind != null &&
+                    types.indexOf(feature.kind) > -1) {
+
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
         interactive: true
         color:
             default: [1, 1, 0]
         size:
             # vary size with zoom
-            # default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
-            default: Style.pixels(15)
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })

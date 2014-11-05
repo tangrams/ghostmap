@@ -106,7 +106,7 @@
         maxZoom: 20,
         minZoom: 13,
         inertia: false,
-        keyboard: false
+        keyboard: true
     });
 
     var layer = Tangram.leafletLayer({
