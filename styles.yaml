@@ -80,6 +80,7 @@ layers:
         color:
             default: [0.5, 0.675, 0.5]
             pitch: [0.3, 0.675, 0.3]
+        # interactive: true
 
     water:
         mode:
@@ -139,10 +140,88 @@ layers:
         extrude:
             default: function (f, t) { return ((zoom >= 15 && feature.height > 20) || zoom >= 16) }
 
-    spooky:
+    ghostland:
         mode:
             name: ghosts
-        filter: function (f) { return feature.name != null; }
+        filter: |
+            function (f) {
+                var types = ["cemetery"];
+                var blacklist = ["Holocaust"];
+                if (feature.name != null &&
+                    feature.kind != null &&
+                    types.indexOf(feature.kind) > -1) {
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        interactive: true
+        color:
+            default: [.5, .5, .5]
+        size:
+            # vary size with zoom
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
+
+    ghostbuildings:
+        mode:
+            name: ghosts
+        filter: |
+            function (f) {
+                var types = ["church", "library", "museum", "place_of_worship","police"];
+                var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
+                if (feature.name != null &&
+                    feature.kind != null &&
+                    types.indexOf(feature.kind) > -1) {
+
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        interactive: true
+        color:
+            default: [.5, .5, .5]
+        size:
+            # vary size with zoom
+            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
+
+    pois:
+        mode:
+            name: ghosts
+        filter: |
+            function (f) {
+                var types = ["church", "library", "museum", "place_of_worship","police"];
+                var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
+                if (feature.name != null &&
+                    feature.kind != null &&
+                    types.indexOf(feature.kind) > -1) {
+
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
         interactive: true
         color:
             default: [1, 1, 0]
