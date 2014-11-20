@@ -40,4 +40,72 @@
     name: buildings
 
 -
-    name: spooky
+    name: ghostland
+    data: |
+        function (json) {
+            var features = json['landuse'] && json['landuse'].features;
+            if (!features) {
+                return null;
+            }
+
+            var points = [];
+            features.forEach(function(f) {
+                if (f.geometry != null) {
+                    f.geometry.coordinates.forEach(function(ring) {
+                        ring.forEach(function(point) {
+                            points.push({
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: point
+                                },
+                                properties: f.properties
+
+                            });
+                        });
+                    });
+                }
+            });
+
+            return {
+                type: 'FeatureCollection',
+                features: points
+            };
+        }
+
+-
+    name: ghostbuildings
+    # data: buildings
+    data: |
+        function test (json) {
+            var features = json['buildings'] && json['buildings'].features;
+            if (!features) {
+                return null;
+            }
+
+            var points = [];
+            features.forEach(function(f) {
+                if (f.geometry != null) {
+                    f.geometry.coordinates.forEach(function(ring) {
+                        ring.forEach(function(point) {
+                            points.push({
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: point
+                                },
+                                properties: f.properties
+
+                            });
+                        });
+                    });
+
+                }
+            });
+
+            return {
+                type: 'FeatureCollection',
+                features: points
+            };
+        }
+-
+    name: pois
+

@@ -16,8 +16,7 @@
         'ghosts': {
             source: {
                 type: 'GeoJSONTileSource',
-                url:  appendProtocol('//vector.mapzen.com/osm/haunted/{z}/{x}/{y}.json')
-                // url:  appendProtocol('//vector.dev.mapzen.com/osm/haunted/{z}/{x}/{y}.json')
+                url:  appendProtocol('//vector.mapzen.com/osm/all/{z}/{x}/{y}.json')
             },
             layers: 'layers.yaml',
             styles: 'styles.yaml'
@@ -105,7 +104,7 @@
         maxZoom: 20,
         minZoom: 13,
         inertia: false,
-        keyboard: false
+        keyboard: true
     });
 
     var layer = Tangram.leafletLayer({
