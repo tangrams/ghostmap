@@ -31,6 +31,9 @@
     <script src="node_modules/tangram/dist/tangram.debug.js"></script>
     <!-- Demo module -->
     <script src="main.js"></script>
-
+    <!-- Adding a script block to post message to the parent container (think iframed demos) -->
+    <script type="text/javascript">
+      window.addEventListener("hashchange",function(){parent.postMessage(window.location.hash, "*")});
+    </script>
   </body>
 </html>
