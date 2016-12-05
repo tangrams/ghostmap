@@ -12,17 +12,6 @@
     var default_tile_source = 'ghosts',
         rS;
 
-    var tile_sources = {
-        'ghosts': {
-            source: {
-                type: 'GeoJSONTileSource',
-                url:  appendProtocol('//vector.mapzen.com/osm/all/{z}/{x}/{y}.json')
-            },
-            layers: 'layers.yaml',
-            styles: 'styles.yaml'
-        }
-    };
-
     var locations = {
         'London': [51.508, -0.105, 15],
         'New York': [40.70531887544228, -74.00976419448853, 16],
@@ -40,11 +29,6 @@
     // #[source],[lat],[lng],[zoom]
     // #[source],[location name]
     var url_hash = window.location.hash.slice(1, window.location.hash.length).split(',');
-
-    // Get tile source from URL
-    if (url_hash.length >= 1 && tile_sources[url_hash[0]] != null) {
-        default_tile_source = url_hash[0];
-    }
 
     // Get location from URL
     var map_start_location = locations['New York'];
@@ -76,7 +60,7 @@
     // Put current state on URL
     function updateURL() {
         var map_latlng = map.getCenter(),
-            url_options = [default_tile_source, map_latlng.lat, map_latlng.lng, map.getZoom()];
+            url_options = [map_latlng.lat, map_latlng.lng, map.getZoom()];
 
         if (rS) {
             url_options.push('rstats');
@@ -93,22 +77,16 @@
 
     var map = L.map('map', {
         maxZoom: 20,
-        minZoom: 13,
+        minZoom: 12,
         inertia: false,
         keyboard: true
     });
 
     var layer = Tangram.leafletLayer({
-        vectorTileSource: tile_sources[default_tile_source].source,
-        vectorLayers: tile_sources[default_tile_source].layers,
-        vectorStyles: tile_sources[default_tile_source].styles,
-        numWorkers: 2,
-        preRender: preRender,
-        postRender: postRender,
-        attribution: 'Map data &copy; OpenStreetMap contributors | <a href="https://github.com/tangrams/tangram" target="_blank">Source Code</a>',
-        unloadInvisibleTiles: false,
-        updateWhenIdle: false
+        scene: 'scene.yaml',
+        attribution: '<a href="https://mapzen.com/tangram" target="_blank">Tangram</a> | &copy; OSM contributors | <a href="https://mapzen.com/" target="_blank">Mapzen</a>'
     });
+
     window.layer = layer;
 
     var scene = layer.scene;

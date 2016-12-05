@@ -3,17 +3,12 @@ camera:
     focal_length: [[16, 2], [17, 2.5], [18, 3], [19, 4], [20, 6]] # pairs of [zoom, focal len]
     vanishing_point: [-.25, -.25] # slightly off-center viewing angle, towards lower-left of screen
 
-    # type: isometric
-    # axis: [1, .5]
+# lights:
+#     type: night
 
-    # type: flat
-
-lighting:
-    type: night
-
-modes:
+styles:
     water:
-        extends: polygons
+        base: polygons
         animated: true
         shaders:
             defines:
@@ -26,7 +21,7 @@ modes:
 
 
     ghostbuildings:
-        extends: polygons
+        base: polygons
         animated: true
 
         shaders:
@@ -44,7 +39,7 @@ modes:
                     color.a = noiseColor;
 
     ghosts:
-        extends: polygons
+        base: polygons
         animated: true
         texcoords: true
         shaders:
@@ -73,105 +68,109 @@ modes:
 
 layers:
     earth:
-        color:
-            default: [0.175, 0.175, 0.175]
+        data: { source: osm }
+        draw:
+            polygons:
+                color:
+                    default: [0.175, 0.175, 0.175]
 
     landuse:
-        color:
-            default: [0.5, 0.675, 0.5]
-            pitch: [0.3, 0.675, 0.3]
-        # interactive: true
+        data: { source: osm }
+        draw:
+            polygons:
+                color:
+                    default: [0.5, 0.675, 0.5]
+                    pitch: [0.3, 0.675, 0.3]
+                # interactive: true
 
     water:
-        mode:
-            name: water
-        color:
-            default: [0.5, 0.5, 0.875]
-        outline:
-            color:
-                default: [0.6, 0.6, 0.975]
-            width:
-                default:
-                    function () {
-                        return (
-                            zoom >= 16 &&
-                            (feature.kind != 'ocean' && feature.kind != 'riverbank') &&
-                            (2.5 * Math.log(zoom))
-                        );
-                    }
+        data: { source: osm }
+        draw:
+            water:
+                color:
+                    default: [0.5, 0.5, 0.875]
+                outline:
+                    color:
+                        default: [0.6, 0.6, 0.975]
+                    width:
+                        default:
+                            function () {
+                                return (
+                                    zoom >= 16 &&
+                                    (feature.kind != 'ocean' && feature.kind != 'riverbank') &&
+                                    (2.5 * Math.log(zoom))
+                                );
+                            }
 
     roads:
-        color:
-            default: [1., 1., 1.]
-        width:
-            default: function (f, t) { return 2 * Math.log(zoom); }
-            highway: function (f, t) { return 3 * Math.log(zoom); }
-            major_road: function (f, t) { return 2.5 * Math.log(zoom); }
-            minor_road: function (f, t) { return 2 * Math.log(zoom); }
-            path: function (f, t) { return 1 * Math.log(zoom); }
-            debug: function (f, t) { return 5; }
-        outline:
-            color:
-                default: [0.1, 0.7, 0.7]
-            width:
-                default:
-                    function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
-                highway:
-                    function (f, t) { return (zoom >= 18 && (3/8 * Math.log(zoom))); }
-                major_road:
-                    function (f, t) { return (zoom >= 18 && (2.5/8 * Math.log(zoom))); }
-                minor_road:
-                    function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
-                path:
-                    function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
-                debug:
-                    function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
+        data: { source: osm }
+        draw:
+            lines:
+                color: [1., 1., 1.]
+                width:
+                    default: function (f, t) { return 2 * Math.log(zoom); }
+                    highway: function (f, t) { return 3 * Math.log(zoom); }
+                    major_road: function (f, t) { return 2.5 * Math.log(zoom); }
+                    minor_road: function (f, t) { return 2 * Math.log(zoom); }
+                    path: function (f, t) { return 1 * Math.log(zoom); }
+                    debug: function (f, t) { return 5; }
+                outline:
+                    color:
+                        default: [0.1, 0.7, 0.7]
+                    width:
+                        default:
+                            function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
+                        highway:
+                            function (f, t) { return (zoom >= 18 && (3/8 * Math.log(zoom))); }
+                        major_road:
+                            function (f, t) { return (zoom >= 18 && (2.5/8 * Math.log(zoom))); }
+                        minor_road:
+                            function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
+                        path:
+                            function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
+                        debug:
+                            function (f, t) { return (zoom >= 18 && (2/8 * Math.log(zoom))); }
 
     buildings:
-        mode:
-            name: ghostbuildings
-        color:
-            default: [.5, .5, .5]
-        outline:
-            color:
-                default: [1, 1, 1]
-            width:
-                default: Style.pixels(1)
-        extrude:
-            default: function (f, t) { return ((zoom >= 15 && feature.height > 20) || zoom >= 16) }
+        data: { source: osm }
+        draw:
+            ghostbuildings:
+                color:
+                    default: [.5, .5, .5]
+                outline:
+                    color: [1, 1, 1]
+                    width: Style.pixels(1)
+                extrude: function (f, t) { return ((zoom >= 15 && feature.height > 20) || zoom >= 16) }
 
     ghostland:
-        mode:
-            name: ghosts
-        filter: |
-            function (f) {
-                var types = ["cemetery"];
-                var blacklist = ["Holocaust"];
-                if (feature.name != null &&
-                    feature.kind != null &&
-                    types.indexOf(feature.kind) > -1) {
-                    // partial match blacklist
-                    for (var i = 0; i < blacklist.length; i++) {
-                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
-                        if (feature.name.match(re)) {
-                            //console.log(feature.name +" - "+blacklist[i]);
-                            return false;
+        data: { source: osm }
+            draw:
+                ghosts:
+                filter: |
+                    function (f) {
+                        var types = ["cemetery"];
+                        var blacklist = ["Holocaust"];
+                        if (feature.name != null &&
+                            feature.kind != null &&
+                            types.indexOf(feature.kind) > -1) {
+                            // partial match blacklist
+                            for (var i = 0; i < blacklist.length; i++) {
+                                var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                                if (feature.name.match(re)) {
+                                    //console.log(feature.name +" - "+blacklist[i]);
+                                    return false;
+                                }
+                            }
+                            return true;
                         }
+                        return false;
                     }
-                    return true;
-                }
-                return false;
-            }
-        interactive: true
-        color:
-            default: [.5, .5, .5]
-        size:
-            # vary size with zoom
-            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
+                interactive: true
+                color: [.5, .5, .5]
+                size: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
 
     ghostbuildings:
-        mode:
-            name: ghosts
+        data: { source: osm }
         filter: |
             function (f) {
                 var types = ["church", "library", "museum", "place_of_worship","police"];
@@ -192,16 +191,15 @@ layers:
                 }
                 return false;
             }
-        interactive: true
-        color:
-            default: [.5, .5, .5]
-        size:
-            # vary size with zoom
-            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
+        draw:
+            ghosts:
+                interactive: true
+                color: [.5, .5, .5]
+                size: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
 
     pois:
-        mode:
-            name: ghosts
+        data: { source: osm }
+        interactive: true
         filter: |
             function (f) {
                 var types = ["church", "library", "museum", "place_of_worship","police"];
@@ -222,9 +220,7 @@ layers:
                 }
                 return false;
             }
-        interactive: true
-        color:
-            default: [1, 1, 0]
-        size:
-            # vary size with zoom
-            default: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
+        draw:
+            ghosts:
+                color: [1, 1, 0]
+                size: Style.pixels(function () { return (15./8.)*zoom-(35./2.); })
