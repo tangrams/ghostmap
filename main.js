@@ -1,7 +1,7 @@
 /*jslint browser: true*/
 /*global Tangram, gui */
 
-(function () {
+map = (function () {
     'use strict';
 
     function appendProtocol(url) {
@@ -11,17 +11,6 @@
     // default source, can be overriden by URL
     var default_tile_source = 'ghosts',
         rS;
-
-    var tile_sources = {
-        'ghosts': {
-            source: {
-                type: 'GeoJSONTileSource',
-                url:  appendProtocol('//vector.mapzen.com/osm/all/{z}/{x}/{y}.json')
-            },
-            layers: 'layers.yaml',
-            styles: 'styles.yaml'
-        }
-    };
 
     var locations = {
         'London': [51.508, -0.105, 15],
@@ -40,11 +29,6 @@
     // #[source],[lat],[lng],[zoom]
     // #[source],[location name]
     var url_hash = window.location.hash.slice(1, window.location.hash.length).split(',');
-
-    // Get tile source from URL
-    if (url_hash.length >= 1 && tile_sources[url_hash[0]] != null) {
-        default_tile_source = url_hash[0];
-    }
 
     // Get location from URL
     var map_start_location = locations['New York'];
@@ -76,7 +60,7 @@
     // Put current state on URL
     function updateURL() {
         var map_latlng = map.getCenter(),
-            url_options = [default_tile_source, map_latlng.lat, map_latlng.lng, map.getZoom()];
+            url_options = [map_latlng.lat, map_latlng.lng, map.getZoom()];
 
         if (rS) {
             url_options.push('rstats');
@@ -93,22 +77,16 @@
 
     var map = L.map('map', {
         maxZoom: 20,
-        minZoom: 13,
+        minZoom: 12,
         inertia: false,
         keyboard: true
     });
 
     var layer = Tangram.leafletLayer({
-        vectorTileSource: tile_sources[default_tile_source].source,
-        vectorLayers: tile_sources[default_tile_source].layers,
-        vectorStyles: tile_sources[default_tile_source].styles,
-        numWorkers: 2,
-        preRender: preRender,
-        postRender: postRender,
-        attribution: 'Map data &copy; OpenStreetMap contributors | <a href="https://github.com/tangrams/tangram" target="_blank">Source Code</a>',
-        unloadInvisibleTiles: false,
-        updateWhenIdle: false
+        scene: 'scene.yaml',
+        attribution: '<a href="https://mapzen.com/tangram" target="_blank">Tangram</a> | &copy; OSM contributors | <a href="https://mapzen.com/" target="_blank">Mapzen</a>'
     });
+
     window.layer = layer;
 
     var scene = layer.scene;
@@ -205,52 +183,38 @@
         selection_info.style.display = 'block';
 
         // Show selected feature on hover
-        scene.container.addEventListener('mousemove', function (event) {
-            // if (gui['feature info'] == false) {
-            //     if (selection_info.parentNode != null) {
-            //         selection_info.parentNode.removeChild(selection_info);
-            //     }
-
-            //     return;
-            // }
-
+        // Show selected feature on hover
+        map.getContainer().addEventListener('mousemove', function (event) {
+        // scene.container.addEventListener('mousemove', function (event) {
             var pixel = { x: event.clientX, y: event.clientY };
+            scene.getFeatureAt(pixel).then(function(selection) {
+                if (!selection) {
+                    return;
+                }
+                var feature = selection.feature;
+                if (feature != null) {
 
-            scene.getFeatureAt(
-                pixel,
-                function (selection) {
-                    var feature = selection.feature;
-                    if (feature != null) {
-                        // console.log("selection map: " + JSON.stringify(feature));
+                    var label = '';
+                    if (feature.properties.name != null) {
+                        label = feature.properties.name;
+                    }
 
-                        var label = '';
-                        if (feature.properties.name != null) {
-                            label = feature.properties.name;
-                        }
-
-                        // if (feature.properties.layer == 'buildings' && feature.properties.height) {
-                        //     if (label != '') {
-                        //         label += '<br>';
-                        //     }
-                        //     label += feature.properties.height + 'm';
-                        // }
-
-                        if (label != '') {
-                            selection_info.style.left = (pixel.x + 5) + 'px';
-                            selection_info.style.top = (pixel.y + 15) + 'px';
-                            selection_info.innerHTML = '<span class="labelInner">' + label + '</span>';
-                            scene.container.appendChild(selection_info);
-                        }
-                        else if (selection_info.parentNode != null) {
-                            selection_info.parentNode.removeChild(selection_info);
-                        }
+                    if (label != '') {
+                        selection_info.style.left = (pixel.x + 5) + 'px';
+                        selection_info.style.top = (pixel.y + 15) + 'px';
+                        selection_info.style.zIndex = 1000;
+                        selection_info.innerHTML = '<span class="labelInner">' + label + '</span>';
+                        scene.container.appendChild(selection_info);
                     }
                     else if (selection_info.parentNode != null) {
                         selection_info.parentNode.removeChild(selection_info);
                     }
                 }
-            );
-
+                else if (selection_info.parentNode != null) {
+                    selection_info.parentNode.removeChild(selection_info);
+                }
+            });
+ 
             // Don't show labels while panning
             if (scene.panning == true) {
                 if (selection_info.parentNode != null) {
@@ -260,54 +224,15 @@
         });
     }
 
-    // Pre-render hook
-    function preRender () {
-        if (rS != null) { // rstats
-            rS('frame').start();
-            // rS('raf').tick();
-            rS('fps').frame();
-
-            if (scene.dirty) {
-                glS.start();
-            }
-        }
-    }
-
-    // Post-render hook
-    function postRender () {
-        if (rS != null) { // rstats
-            rS('frame').end();
-            rS('rendertiles').set(scene.renderable_tiles_count);
-            rS('glbuffers').set((scene.getDebugSum('buffer_size') / (1024*1024)).toFixed(2));
-            rS('features').set(scene.getDebugSum('features'));
-            rS().update();
-        }
-    }
-
     /***** Render loop *****/
     window.addEventListener('load', function () {
         // Scene initialized
-        layer.on('init', function() {            
-            if (url_mode) {
-                gl_mode_options.setup(url_mode);
-            } else {
-                scene.refreshModes();
-            }
-            updateURL();
-
+        layer.on('init', function() {
             initFeatureSelection();
         });
         layer.addTo(map);
-
-        if (osm_debug == true) {
-            window.osm_layer =
-                L.tileLayer(
-                    'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    { opacity: 0.5 })
-                .bringToFront()
-                .addTo(map);
-        }
     });
 
+    return map;
 
 }());

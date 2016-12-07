@@ -1,0 +1,204 @@
+import:
+    - https://tangrams.github.io/blocks/fx/water.yaml
+    - https://tangrams.github.io/blocks/generative/noise.yaml
+
+scene:
+    animated: true
+
+camera:
+    type: perspective
+    focal_length: [[16, 2], [17, 2.5], [18, 3], [19, 4], [20, 6]] # pairs of [$zoom, focal len]
+    vanishing_point: [-.25, -.25] # slightly off-center viewing angle, towards lower-left of screen
+
+sources:
+    osm:
+        type: TopoJSON
+        url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson
+        url_params:
+            api_key: mapzen-T3tPjn7
+        max_$zoom: 16
+
+styles:
+    water:
+        base: polygons
+        mix: [fx-water]
+        animated: true
+        shaders:
+            defines:
+                EFFECT_NOISE_ANIMATED: true
+            blocks:
+                color: |
+                    color += snoise(vec3(worldPosition().xy*0.08,u_time*.5))*0.02;
+
+    ghostbuildings:
+        base: polygons
+        mix: [generative-noise]
+        blend: inlay
+        animated: true
+        shaders:
+            uniforms:
+                u_frequency: 100.
+            blocks:
+                color: |
+                    vec3 vPos = v_world_position.xyz / u_frequency;
+                    float noiseColor = 2. * snoise(vPos.xyz * 0.1 + (u_time / 5.));
+                    color.a -= noiseColor;
+    ghostlines:
+        base: lines
+        mix: [ghostbuildings]
+        shaders:
+            blocks:
+                color: color.a = noiseColor * .25;
+
+    ghosttext:
+        base: text
+        mix: [ghostbuildings]
+        shaders:
+            blocks:
+                color: color.a *= noiseColor;
+    ghosts:
+        base: points
+        mix: [ghostbuildings]
+        blend: overlay
+        animated: true
+        texcoords: true
+        shaders:
+            uniforms:
+                u_texture: http://tangrams.github.io/ghostmap/images/ghost_strip.gif
+                number_of_frames: 2
+                fps: 2
+                u_frequency: 100.
+            blocks:
+                color: |
+                    vPos = v_world_position.xyz / u_frequency;
+
+                    // animate texture lookup
+                    float offset = floor(mod(u_time * fps, 2.))*.5;
+                    color.rgb = texture2D(u_texture, (vec2(v_texcoord.x/number_of_frames, v_texcoord.y) + vec2(offset, 0.))).rgb;
+
+                    // use texture alpha
+                    if (color.rgb == vec3(0.)) discard;
+
+                    color.a = noiseColor;
+
+
+layers:
+    earth:
+        data: { source: osm }
+        draw:
+            polygons:
+                order: function() { return feature.sort_rank; }
+                color: [0.175, 0.175, 0.175]
+
+    water:
+        data: { source: osm }
+        draw:
+            water:
+                order: function() { return feature.sort_rank; }
+                color: [0.5, 0.5, 0.875]
+            lines:
+                color: [0.6, 0.6, 0.975]
+                width: |
+                    function() {
+                        return (
+                            $zoom >= 16 &&
+                            (feature.kind_detail != 'ocean' && feature.kind_detail != 'riverbank') &&
+                            (2.5 * Math.log($zoom))
+                        );
+                    }
+
+    roads:
+        data: { source: osm }
+        draw:
+            lines:
+                order: function() { return feature.sort_rank; }
+                color: [0.357, 0.357, 0.357, 1.00]
+                width: function() { return 2 * Math.log($zoom); }
+                outline:
+                    color: [0.1, 0.7, 0.7]
+                    width: function() { return ($zoom >= 18 && (2/8 * Math.log($zoom))); }
+        highway:
+            filter: { kind: highway }
+            draw:
+                lines:
+                    width: function() { return 3 * Math.log($zoom); }
+                    outline:
+                        width: function() { return ($zoom >= 18 && (3/8 * Math.log($zoom))); }
+        major_road:
+            filter: { kind: major_road }
+            draw:
+                lines:
+                    width: function() { return 2.5 * Math.log($zoom); }
+                    outline:
+                        width: function() { return ($zoom >= 18 && (2.5/8 * Math.log($zoom))); }
+        minor_road_path:
+            filter: { kind: [minor_road, path] }
+            draw:
+                lines:
+                    width: function() { return 1 * Math.log($zoom); }
+                    outline:
+                        width: function() { return ($zoom >= 18 && (2/8 * Math.log($zoom))); }
+
+    buildings:
+        data: { source: osm }
+        draw:
+            ghostbuildings:
+                order: function() { return feature.sort_rank; }
+                color: [.5, .5, .5]
+                extrude: function() { return (($zoom >= 15 && feature.height > 20) || $zoom >= 16) }
+            ghostlines:
+                order: function() { return feature.sort_rank+1; }
+                color: [1, 1, 1]
+                width: 1px
+        ghosts:
+            filter: |
+                function() {
+                    var types = ["church", "library", "museum", "place_of_worship", "police"];
+                    var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
+                    if (feature.name != null &&
+                        feature.kind_detail != null &&
+                        types.indexOf(feature.kind_detail) > -1) {
+                        // partial match blacklist
+                        for (var i = 0; i < blacklist.length; i++) {
+                            var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                            if (feature.name.match(re)) {
+                                //console.log(feature.name +" - "+blacklist[i]);
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+            draw:
+                ghosts:
+                    interactive: true
+                    color: white
+                    size: [[15, 15px], [18, 30px]]
+
+    pois:
+        data: { source: osm }
+        filter: |
+            function() {
+                var types = ["church", "library", "museum", "place_of_worship", "police"];
+                var blacklist = ["Memorial Museum", "Jewish", "Holocaust"];
+                if (feature.name != null &&
+                    feature.kind != null &&
+                    types.indexOf(feature.kind) > -1) {
+                    // partial match blacklist
+                    for (var i = 0; i < blacklist.length; i++) {
+                        var re = new RegExp(blacklist[i], "gi"); // gi = case insensitive
+                        if (feature.name.match(re)) {
+                            //console.log(feature.name +" - "+blacklist[i]);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        draw:
+            ghosts:
+                interactive: true
+                color: white
+                size: [[15, 15px], [18, 30px]]
