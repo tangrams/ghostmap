@@ -11,7 +11,7 @@ camera:
     vanishing_point: [-.25, -.25] # slightly off-center viewing angle, towards lower-left of screen
 
 sources:
-    osm:
+    mapzen:
         type: TopoJSON
         url: https://tile.mapzen.com/mapzen/vector/v1/all/{z}/{x}/{y}.topojson
         url_params:
@@ -84,14 +84,14 @@ styles:
 
 layers:
     earth:
-        data: { source: osm }
+        data: { source: mapzen }
         draw:
             polygons:
                 order: function() { return feature.sort_rank; }
                 color: [0.175, 0.175, 0.175]
 
     water:
-        data: { source: osm }
+        data: { source: mapzen }
         draw:
             water:
                 order: function() { return feature.sort_rank; }
@@ -108,7 +108,7 @@ layers:
                     }
 
     roads:
-        data: { source: osm }
+        data: { source: mapzen }
         draw:
             lines:
                 order: function() { return feature.sort_rank; }
@@ -140,7 +140,7 @@ layers:
                         width: function() { return ($zoom >= 18 && (2/8 * Math.log($zoom))); }
 
     buildings:
-        data: { source: osm }
+        data: { source: mapzen }
         draw:
             ghostbuildings:
                 order: function() { return feature.sort_rank; }
@@ -177,7 +177,7 @@ layers:
                     size: [[15, 15px], [18, 30px]]
 
     pois:
-        data: { source: osm }
+        data: { source: mapzen }
         filter: |
             function() {
                 var types = ["church", "library", "museum", "place_of_worship", "police"];
